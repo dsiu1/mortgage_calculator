@@ -6,43 +6,19 @@ import {
   type LoanInput,
   type ScheduleRow,
 } from "./mortgage";
+import { initSolar } from "./solar-ui";
+import {
+  $,
+  currencyFrom,
+  money,
+  moneyCompact,
+  parseNumber,
+  segmentValue,
+  wireSegment,
+  type Currency,
+} from "./ui-common";
 
-/* ── DOM helpers ──────────────────────────────────────────── */
-const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
-  document.getElementById(id) as T;
-
-/* ── Currency / formatting ────────────────────────────────── */
-interface Currency {
-  symbol: string;
-  locale: string;
-}
-
-function currentCurrency(): Currency {
-  const [symbol, locale] = ($("currency") as HTMLSelectElement).value.split("|");
-  return { symbol: symbol === "none" ? "" : symbol, locale: locale || "en-US" };
-}
-
-function money(n: number, cur: Currency, decimals = 0): string {
-  const num = new Intl.NumberFormat(cur.locale, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(Math.round(n * 10 ** decimals) / 10 ** decimals);
-  return cur.symbol ? `${cur.symbol}${num}` : num;
-}
-
-function moneyCompact(n: number, cur: Currency): string {
-  const num = new Intl.NumberFormat(cur.locale, {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(n);
-  return cur.symbol ? `${cur.symbol}${num}` : num;
-}
-
-function parseNumber(raw: string): number {
-  const cleaned = raw.replace(/[^0-9.]/g, "");
-  const n = parseFloat(cleaned);
-  return Number.isFinite(n) ? n : 0;
-}
+const currentCurrency = (): Currency => currencyFrom("currency");
 
 function termLabel(months: number): string {
   const y = Math.floor(months / 12);
@@ -51,24 +27,20 @@ function termLabel(months: number): string {
   return `${y}y ${m}m`;
 }
 
-/* ── Segmented controls ───────────────────────────────────── */
-function segmentValue(id: string): string {
-  const active = $(id).querySelector<HTMLButtonElement>(".is-active");
-  return active?.dataset.value ?? "";
-}
+/* ── Tabs ─────────────────────────────────────────────────── */
+function updateTabs(): void {
+  const active = segmentValue("tabs");
 
-function wireSegment(id: string, onChange: () => void): void {
-  const group = $(id);
-  group.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
-      ".segmented__btn",
-    );
-    if (!btn || btn.classList.contains("is-active")) return;
-    group
-      .querySelectorAll(".segmented__btn")
-      .forEach((b) => b.classList.remove("is-active"));
-    btn.classList.add("is-active");
-    onChange();
+  $("tabs")
+    .querySelectorAll<HTMLButtonElement>(".segmented__btn")
+    .forEach((btn) => {
+      const on = btn.dataset.value === active;
+      btn.setAttribute("aria-selected", String(on));
+      if (on && btn.dataset.tagline) $("tagline").textContent = btn.dataset.tagline;
+    });
+
+  document.querySelectorAll<HTMLElement>(".tab-panel").forEach((panel) => {
+    panel.classList.toggle("is-hidden", panel.dataset.tab !== active);
   });
 }
 
@@ -479,11 +451,14 @@ function init(): void {
   $("controls").addEventListener("input", render);
   $("currency").addEventListener("change", render);
 
+  wireSegment("tabs", updateTabs);
   wireSegment("rateType", render);
   wireSegment("variableStyle", render);
   wireSegment("scheduleView", render);
 
+  updateTabs();
   initTheme();
+  initSolar();
 
   $("addExtra").addEventListener("click", () => {
     const row = makeExtraRow();

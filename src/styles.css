@@ -35,12 +35,36 @@
   max-width: 52ch;
 }
 
+/* ── Tabs ─────────────────────────────────────────────────── */
+/* Sized to its buttons and left-aligned, rather than the full-width
+   equal-columns stretch the segmented control uses inside the form. */
+.segmented--tabs {
+  width: fit-content;
+  grid-auto-columns: minmax(7rem, auto);
+  margin-bottom: var(--pico-block-spacing-vertical);
+}
+.segmented--tabs .segmented__btn {
+  font-size: 0.95rem;
+  padding: 0.5rem 1.1rem;
+}
+/* Beats .layout's own `display: grid` when the mortgage tab is inactive. */
+.tab-panel.is-hidden {
+  display: none;
+}
+
 /* ── Layout ───────────────────────────────────────────────── */
 .layout {
   display: grid;
-  grid-template-columns: minmax(300px, 350px) 1fr;
+  grid-template-columns: minmax(340px, 390px) 1fr;
   gap: clamp(1rem, 2.5vw, 1.5rem);
   align-items: start;
+}
+/* A grid track's automatic minimum size is its content's min-content width, so
+   a nowrap table would otherwise widen the whole column — and the columns would
+   visibly re-flow when the schedule's column count changed. Pin it to 0 and let
+   .schedule__scroll do the scrolling it already promises. */
+.layout > * {
+  min-width: 0;
 }
 @media (max-width: 860px) {
   .layout {
@@ -52,7 +76,10 @@
   background: var(--pico-card-background-color);
   box-shadow: var(--pico-card-box-shadow);
   border-radius: var(--pico-border-radius);
-  padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
+  /* Pico's own card gutter runs tight for a form this dense — give the fields
+     room to breathe inside the box. */
+  padding: var(--pico-block-spacing-vertical)
+    calc(var(--pico-block-spacing-horizontal) * 1.25);
 }
 .controls {
   position: sticky;
@@ -103,6 +130,11 @@
 .field-split__control input {
   margin-bottom: 0;
   text-align: right;
+  /* The control is a fixed width shared with the suffix, and Pico's number
+     inputs keep their spinners — so the value needs to sit a step below the
+     body size to avoid clipping. */
+  font-size: 0.82rem;
+  padding-inline: 0.5rem;
 }
 .field-suffix {
   font-size: 0.82rem;
@@ -118,8 +150,20 @@
 
 /* Keep the currency symbol select from growing to match the amount input —
    Pico's role=group gives every direct child flex: 1 1 auto by default. */
-#currency {
+#currency,
+#solarCurrency {
   flex: 0 0 4.5rem;
+}
+
+/* The solar form's suffixes ("/kWh", "%/yr") run longer than the mortgage's. */
+#solarControls .field-suffix {
+  min-width: 3.9rem;
+}
+#solarControls small {
+  display: block;
+  margin: -0.35rem 0 var(--pico-spacing);
+  font-size: 0.72rem;
+  color: var(--pico-muted-color);
 }
 
 /* ── Segmented control ───────────────────────────────────── */
@@ -233,6 +277,16 @@
 .readout--hero {
   background: var(--accent-soft);
 }
+/* Solar's hero is payback — a break-even, so it reads in the "good" color. */
+.readout--hero-solar {
+  background: color-mix(in srgb, var(--best) 12%, var(--pico-card-background-color));
+}
+.readout--hero-solar .readout__value {
+  color: var(--best);
+}
+.readout--hero-solar .readout__value--cost {
+  color: var(--cost);
+}
 .readout__label {
   margin: 0;
   font-size: 0.75rem;
@@ -343,6 +397,37 @@
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
 }
+/* ── Solar: cumulative cash flow ─────────────────────────── */
+.chart__area-solar {
+  fill: url(#solarGrad);
+}
+.chart__line-solar {
+  fill: none;
+  stroke: var(--best);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+/* The break-even axis — heavier than a gridline, it's the line that matters. */
+.chart__zeroline {
+  stroke: var(--pico-muted-color);
+  stroke-width: 1.5;
+}
+.chart__payback {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.chart__payback-dot {
+  fill: var(--accent);
+  stroke: var(--pico-card-background-color);
+  stroke-width: 2;
+}
+.chart__legend .swatch--line {
+  height: 0.2rem;
+  border-radius: 1px;
+}
+
 .chart__cursor {
   stroke: var(--pico-muted-color);
   stroke-width: 1;
@@ -352,6 +437,9 @@
   fill: var(--accent);
   stroke: var(--pico-card-background-color);
   stroke-width: 2;
+}
+.chart__dot--solar {
+  fill: var(--best);
 }
 .chart__tip {
   position: absolute;
@@ -421,6 +509,35 @@
 #scheduleTable .cell-extra {
   color: var(--accent);
   font-weight: 600;
+}
+
+#solarTable {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+#solarTable th,
+#solarTable td {
+  text-align: right;
+  white-space: nowrap;
+}
+#solarTable th:first-child,
+#solarTable td:first-child {
+  text-align: left;
+}
+#solarTable thead th {
+  position: sticky;
+  top: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--pico-card-background-color);
+  z-index: 1;
+}
+#solarTable .cell-cost {
+  color: var(--cost);
+}
+#solarTable .cell-credit {
+  color: var(--best);
 }
 
 @media (prefers-reduced-motion: reduce) {

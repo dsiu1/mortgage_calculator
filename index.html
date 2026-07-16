@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>Mortgage Calculator</title>
+    <title>Mortgage &amp; Solar Simulators</title>
     <meta
       name="description"
-      content="Compare mortgage interest rates and watch your balance descend to zero — fixed, variable ramp, or best/worst-case band, with extra payments."
+      content="Two simulators in one page: compare mortgage interest rates and watch your balance descend to zero, or model a solar install's cumulative cash flow and payback."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,8 +39,8 @@
   <body>
     <header class="container masthead">
       <hgroup>
-        <h1>Mortgage Calculator</h1>
-        <p>
+        <h1>Simulators</h1>
+        <p id="tagline">
           Set the loan and rate, add any extra payments, and see the schedule
           update instantly.
         </p>
@@ -62,7 +62,36 @@
     </header>
 
     <main class="container">
-      <div class="layout">
+      <div
+        class="segmented segmented--tabs"
+        role="tablist"
+        id="tabs"
+        aria-label="Simulator"
+      >
+        <button
+          type="button"
+          class="segmented__btn is-active"
+          data-value="mortgage"
+          data-tagline="Set the loan and rate, add any extra payments, and see the schedule update instantly."
+          role="tab"
+          aria-controls="tab-mortgage"
+        >
+          Mortgage
+        </button>
+        <button
+          type="button"
+          class="segmented__btn"
+          data-value="solar"
+          data-tagline="Model a solar install — panels, generation, and payback."
+          role="tab"
+          aria-controls="tab-solar"
+        >
+          Solar
+        </button>
+      </div>
+
+      <!-- ── Mortgage simulation ────────────────────────────── -->
+      <div class="layout tab-panel" data-tab="mortgage" id="tab-mortgage" role="tabpanel">
         <!-- ── Inputs ─────────────────────────────────────────── -->
         <form class="panel controls" id="controls" autocomplete="off">
           <fieldset>
@@ -238,6 +267,173 @@
             </div>
             <div class="schedule__scroll overflow-auto">
               <table class="striped" id="scheduleTable">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ── Solar simulation ───────────────────────────────── -->
+      <div
+        class="layout tab-panel is-hidden"
+        data-tab="solar"
+        id="tab-solar"
+        role="tabpanel"
+      >
+        <!-- ── Assumptions ──────────────────────────────────── -->
+        <form class="panel controls" id="solarControls" autocomplete="off">
+          <fieldset>
+            <legend>The system</legend>
+
+            <label for="solarSystemCost">System cost</label>
+            <fieldset role="group">
+              <select id="solarCurrency" aria-label="Currency">
+                <option value="none|en-US">#</option>
+                <option value="$|en-US">$</option>
+                <option value="£|en-GB">£</option>
+                <option value="€|de-DE">€</option>
+                <option value="¥|ja-JP" selected>¥</option>
+                <option value="₩|ko-KR">₩</option>
+                <option value="₹|en-IN">₹</option>
+                <option value="RM|ms-MY">RM</option>
+              </select>
+              <input
+                id="solarSystemCost"
+                class="figure"
+                type="text"
+                inputmode="numeric"
+                value="1,300,000"
+              />
+            </fieldset>
+
+            <label for="solarCapacity" class="field-split">
+              <span>Solar capacity</span>
+              <span class="field-split__control">
+                <input id="solarCapacity" class="figure" type="number" min="0" max="100" step="0.1" value="5.4" />
+                <span class="field-suffix">kW</span>
+              </span>
+            </label>
+
+            <label for="solarBattery" class="field-split">
+              <span>Battery capacity</span>
+              <span class="field-split__control">
+                <input id="solarBattery" class="figure" type="number" min="0" max="100" step="0.1" value="9.9" />
+                <span class="field-suffix">kWh</span>
+              </span>
+            </label>
+            <small>
+              Recorded for the spec. The model assumes generation is used on
+              site up to your usage — storage is what makes that plausible — but
+              it doesn't size the battery, so this figure doesn't move the
+              result.
+            </small>
+
+            <label for="solarYears" class="field-split">
+              <span>Horizon</span>
+              <span class="field-split__control">
+                <input id="solarYears" class="figure" type="number" min="1" max="40" step="1" value="20" />
+                <span class="field-suffix">years</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Energy</legend>
+
+            <label for="solarUsage" class="field-split">
+              <span>Annual usage</span>
+              <span class="field-split__control">
+                <input id="solarUsage" class="figure" type="number" min="0" step="50" value="4100" />
+                <span class="field-suffix">kWh</span>
+              </span>
+            </label>
+
+            <label for="solarDegradation" class="field-split">
+              <span>Panel degradation</span>
+              <span class="field-split__control">
+                <input id="solarDegradation" class="figure" type="number" min="0" max="5" step="0.1" value="0.5" />
+                <span class="field-suffix">%/yr</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Tariffs</legend>
+
+            <label for="solarStartRate" class="field-split">
+              <span>Buy rate</span>
+              <span class="field-split__control">
+                <input id="solarStartRate" class="figure" type="number" min="0" step="0.5" value="32" />
+                <span class="field-suffix">/kWh</span>
+              </span>
+            </label>
+
+            <label for="solarRateIncrease" class="field-split">
+              <span>Buy inflation</span>
+              <span class="field-split__control">
+                <input id="solarRateIncrease" class="figure" type="number" min="0" max="20" step="0.1" value="1.5" />
+                <span class="field-suffix">%/yr</span>
+              </span>
+            </label>
+
+            <label for="solarSellRate" class="field-split">
+              <span>Sell rate</span>
+              <span class="field-split__control">
+                <input id="solarSellRate" class="figure" type="number" min="0" step="0.5" value="8" />
+                <span class="field-suffix">/kWh</span>
+              </span>
+            </label>
+
+            <label for="solarSellDegradation" class="field-split">
+              <span>Sell degradation</span>
+              <span class="field-split__control">
+                <input id="solarSellDegradation" class="figure" type="number" min="0" max="20" step="0.1" value="0" />
+                <span class="field-suffix">%/yr</span>
+              </span>
+            </label>
+          </fieldset>
+        </form>
+
+        <!-- ── Results ──────────────────────────────────────── -->
+        <section class="panel results" aria-live="polite">
+          <div class="readouts">
+            <div class="readout readout--hero readout--hero-solar">
+              <p class="readout__label">Payback</p>
+              <p class="readout__value" id="solarPaybackValue">—</p>
+              <p class="readout__sub" id="solarPaybackSub"></p>
+            </div>
+            <div class="readout">
+              <p class="readout__label">Year-1 savings</p>
+              <p class="readout__value" id="solarSavingsValue">—</p>
+              <p class="readout__sub" id="solarSavingsSub"></p>
+            </div>
+            <div class="readout">
+              <p class="readout__label">Net position</p>
+              <p class="readout__value" id="solarNetValue">—</p>
+              <p class="readout__sub" id="solarNetSub"></p>
+            </div>
+          </div>
+
+          <figure class="chart">
+            <figcaption class="chart__caption">
+              <span class="chart__title">Cumulative cash flow</span>
+              <span class="chart__legend" id="solarLegend"></span>
+            </figcaption>
+            <div class="chart__canvas" id="solarChart"></div>
+          </figure>
+
+          <div class="schedule">
+            <div class="schedule__head">
+              <h2 class="schedule__title">Year by year</h2>
+              <div class="schedule__toggle segmented segmented--sub" id="solarTableView" aria-label="Table columns">
+                <button type="button" class="segmented__btn is-active" data-value="cash">Cash</button>
+                <button type="button" class="segmented__btn" data-value="energy">Energy</button>
+              </div>
+            </div>
+            <div class="schedule__scroll overflow-auto">
+              <table class="striped" id="solarTable">
                 <thead></thead>
                 <tbody></tbody>
               </table>
